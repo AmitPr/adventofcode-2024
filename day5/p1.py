@@ -22,24 +22,23 @@ while cur < len(lines):
     updates.append(lines[cur].strip().split(","))
     cur += 1
 
-valid = []
+unsatisfied = (
+    lambda page, contained, processed: constraints[page]
+    .intersection(contained)
+    .difference(processed)
+)
+
+ans = 0
 for update in updates:
-    contained = set(update)
-    processed = set()
+    contained, processed = set(update), set()
     good = True
     for page in update:
-        page_constraints = constraints[page].intersection(contained)
-        if page_constraints.difference(processed):
+        if unsatisfied(page, contained, processed):
             good = False
             break
         processed.add(page)
 
     if good:
-        valid.append(update)
-
-ans = 0
-for update in valid:
-    middle = update[len(update) // 2]
-    ans += int(middle)
+        ans += int(update[len(update) // 2])
 
 print(ans)

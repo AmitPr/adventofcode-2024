@@ -22,15 +22,6 @@ while cur < len(lines):
     updates.append(lines[cur].strip().split(","))
     cur += 1
 
-invalid = []
-for update in updates:
-    contained, processed = set(update), set()
-    for page in update:
-        page_constraints = constraints[page].intersection(contained)
-        if page_constraints.difference(processed):
-            invalid.append(update)
-            break
-        processed.add(page)
 
 unsatisfied = (
     lambda page, contained, processed: constraints[page]
@@ -38,46 +29,32 @@ unsatisfied = (
     .difference(processed)
 )
 
-
-def settle(needed, fixed, processed, moving):
-    stop = True
-    while True:
-        needed_l = list(needed)
-        for npage in needed_l:
-            if not unsatisfied(npage, contained, processed):
-                stop = False
-                fixed.append(npage)
-                processed.add(npage)
-                needed.remove(npage)
-                moving.remove(npage)
-        if stop or not needed:
-            break
-    return not needed
-
-res = []
-for update in invalid:
+invalid = []
+for update in updates:
     contained, processed = set(update), set()
-    moving = set()
-    fixed = []
     for page in update:
-        needed = unsatisfied(page, contained, processed)
-        if needed:
-            # page has unsatisfied constraints
-            if needed.issubset(moving):
-                # all prerequisites are moving, can try placing them first.
-                if settle(needed, fixed, processed, moving):
-                    fixed.append(page)
-                    processed.add(page)
-            else:
-                moving.add(page)
-        else:
-            processed.add(page)
-            fixed.append(page)
-    settle(moving.copy(), fixed, processed, moving)
-    res.append(fixed)
+        if unsatisfied(page, contained, processed):
+            invalid.append(update)
+            break
+        processed.add(page)
+
 
 ans = 0
-for r in res:
-    ans += int(r[len(r)//2])
+for update in invalid:
+    contained = set(update)
+    while True:
+        processed = set()
+        cont = False
+        for i, page in enumerate(update):
+            needed = unsatisfied(page, contained, processed)
+            if needed:
+                j = update.index(needed.pop())
+                update[i], update[j] = update[j], update[i]
+                cont = True
+                break
+            processed.add(page)
+        if not cont:
+            ans += int(update[len(update) // 2])
+            break
 
 print(ans)
